@@ -15,7 +15,7 @@ import { convertURL } from "~/utils"
 export const OpenWith = () => {
   const t = useT()
   const previews = getExternalPreviews(objStore.obj.name)
-  const { currentObjLink } = useLink()
+  const { proxyLink } = useLink()
   return (
     <Show when={previews.length}>
       <Menu>
@@ -35,7 +35,7 @@ export const OpenWith = () => {
                 href={convertURL(preview.value, {
                   raw_url: objStore.raw_url,
                   name: objStore.obj.name,
-                  d_url: currentObjLink(true),
+                  d_url: proxyLink(objStore.obj, true),
                 })}
               >
                 {preview.key}

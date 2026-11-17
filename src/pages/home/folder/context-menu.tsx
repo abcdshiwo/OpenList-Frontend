@@ -44,7 +44,7 @@ export const ContextMenu = () => {
   const canPackageDownload = () => {
     return UserMethods.is_admin(me()) || getSettingBool("package_download")
   }
-  const { rawLink } = useLink()
+  const { rawLink, proxyLink } = useLink()
   const { isShare } = useRouter()
   return (
     <Menu
@@ -184,7 +184,7 @@ export const ContextMenu = () => {
                   const href = convertURL(player.scheme, {
                     raw_url: "",
                     name: props.name,
-                    d_url: rawLink(props, true),
+                    d_url: proxyLink(props, true),
                   })
                   window.open(href, "_self")
                 }}
