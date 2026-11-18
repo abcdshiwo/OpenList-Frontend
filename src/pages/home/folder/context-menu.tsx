@@ -3,8 +3,8 @@ import { useCopyLink, useDownload, useLink, useRouter, useT } from "~/hooks"
 import "solid-contextmenu/dist/style.css"
 import { HStack, Icon, Text, useColorMode, Image } from "@hope-ui/solid"
 import { operations } from "../toolbar/operations"
-import { For, Show } from "solid-js"
-import { bus, convertURL, notify, torrentParse } from "~/utils"
+import { createMemo, For, Show } from "solid-js"
+import { bus, convertURL, notify, pathJoin, torrentParse } from "~/utils"
 import { ObjType, UserMethods } from "~/types"
 import {
   getSettingBool,
@@ -16,6 +16,7 @@ import {
   userCan,
 } from "~/store"
 import { players } from "../previews/video_box"
+import { getPreviews } from "../previews"
 import { BsPlayCircleFill } from "solid-icons/bs"
 import { isArchive } from "~/store/archive"
 import axios from "axios"
@@ -45,7 +46,15 @@ export const ContextMenu = () => {
     return UserMethods.is_admin(me()) || getSettingBool("package_download")
   }
   const { rawLink, proxyLink } = useLink()
-  const { isShare } = useRouter()
+  const { isShare, pathname, pushHref, to } = useRouter()
+  const openWithPreviews = createMemo(() => {
+    const objs = selectedObjs()
+    if (objs.length !== 1) return []
+    const obj = objs[0]
+    if (obj.is_dir) return []
+    return getPreviews({ ...obj, provider: objStore.provider })
+    // .filter((p) => p.key !== "download")
+  })
   return (
     <Menu
       id={1}
@@ -53,6 +62,21 @@ export const ContextMenu = () => {
       theme={colorMode() !== "dark" ? "light" : "dark"}
       style="z-index: var(--hope-zIndices-popover)"
     >
+      <Show when={openWithPreviews().length > 0}>
+        <Submenu label={<ItemContent name="open_with" />}>
+          <For each={openWithPreviews()}>
+            {(preview) => (
+              <Item
+                onClick={({ props }) => {
+                  to(`${pushHref(props.name)}?preview=${preview.key}`)
+                }}
+              >
+                {preview.name}
+              </Item>
+            )}
+          </For>
+        </Submenu>
+      </Show>
       <For each={["rename", "move", "copy", "delete"] as const}>
         {(name) => (
           <Item
@@ -72,6 +96,19 @@ export const ContextMenu = () => {
         }}
       >
         <ItemContent name="share" />
+      </Item>
+      <Item
+        // 目录也可以生成种子：后端会递归展开目录下的所有文件
+        hidden={() => isShare() || !haveSelected()}
+        onClick={() => {
+          const objs = selectedObjs()
+          bus.emit("generate_transfer_seed", {
+            paths: objs.map((obj) => pathJoin(pathname(), obj.name)),
+            hasDir: objs.some((obj) => obj.is_dir),
+          })
+        }}
+      >
+        <ItemContent name="generate_transfer_seed" />
       </Item>
       <Item
         hidden={() => {

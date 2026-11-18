@@ -36,10 +36,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           submodules: recursive
+          token: ${{ secrets.BOT_TOKEN }}
 
       - name: Validate and trim semver
         id: semver
@@ -57,9 +58,9 @@ jobs:
           fi
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: "24.15.0"
+          node-version: "24.22.2"
           registry-url: "https://registry.npmjs.org"
 
       - name: Install pnpm
@@ -97,9 +98,9 @@ jobs:
       - name: Get current tag
         id: get_current_tag
         run: |
-          # Remove existing tag `rolling`, since `rolling` should always point to the latest commit
+          # Remove existing tag `edge`, since `edge` should always point to the latest commit
           # This is necessary to avoid conflicts with the changelog generation
-          git tag -d rolling 2>/dev/null || true
+          git tag -d edge 2>/dev/null || true
 
           # Get the current tag
           CURRENT_TAG=$(git describe --tags --abbrev=0)
@@ -132,25 +133,6 @@ jobs:
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
 
-      - name: Move regular build
-        run: |
-          mkdir -p regular-dist
-          mv dist/* regular-dist/
-
-      - name: Build Lite Release
-        run: |
-          chmod +x build.sh
-          ./build.sh --release --compress --lite
-        env:
-          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
-          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
-
-      - name: Move lite build and restore regular build
-        run: |
-          mkdir -p lite-dist
-          mv dist/* lite-dist/
-          mv regular-dist/* dist/
-
       - name: Upload Release Assets
         run: |
           # Delete local tag, or gh cli will complain about it.
@@ -160,7 +142,7 @@ jobs:
             --notes-file "${{ github.workspace }}-CHANGELOG.txt" \
             --prerelease=${{ steps.check_pre_release.outputs.is_pre_release }} \
             ${{ steps.get_current_tag.outputs.current_tag }} \
-            dist/openlist-frontend-dist-v*.tar.gz lite-dist/openlist-frontend-dist-lite-v*.tar.gz dist/i18n.tar.gz
+            dist/openlist-frontend-dist-v*.tar.gz dist/i18n.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -168,10 +150,6 @@ jobs:
         run: |
           # Delete the generated dist tarball
           rm -f dist/openlist-frontend-dist-v*.tar.gz
-          rm -f lite-dist/openlist-frontend-dist-lite-v*.tar.gz
-          # Copy the lite version
-          mkdir dist/lite
-          cp -r lite-dist/. dist/lite/
 
           if ! jq -e '.name and .version' package.json > /dev/null; then
             echo "Error: Invalid package.json"
