@@ -9,7 +9,7 @@ import { ObjType, StoreObj } from "~/types"
 import { baseName, fsGet } from "~/utils"
 
 const Preview = () => {
-  const { proxyLink, rawLink, previewPage } = useLink()
+  const { proxyLink, previewPage } = useLink()
   const { searchParams } = useRouter()
   let audios = objStore.objs.filter((obj) => obj.type === ObjType.AUDIO)
   if (audios.length === 0 || searchParams["from"] === "search") {
@@ -35,7 +35,7 @@ const Preview = () => {
       )
     })
     if (coverObj) {
-      cover = rawLink(coverObj, true)
+      cover = proxyLink(coverObj, true)
     } else {
       cover =
         obj.thumb ||
@@ -45,10 +45,8 @@ const Preview = () => {
     const audio = {
       name: obj.name,
       artist: "Unknown",
-      // Use objStore.raw_url for current file (has correct auth tokens from backend)
-      // Use rawLink for other files in playlist
-      url:
-        obj.name === objStore.obj.name ? objStore.raw_url : rawLink(obj, true),
+      // Playback (current + playlist) uses the play proxy (/p/), not download.
+      url: proxyLink(obj, true),
       cover: cover,
       lrc: lrc,
     }

@@ -350,7 +350,8 @@ const Preview = () => {
 
   onMount(() => {
     player = new Artplayer(option)
-    createEffect(on(() => objStore.raw_url, switchUrl))
+    // Playback must use the play proxy (/p/), not raw_url (the download proxy).
+    createEffect(on(() => proxyLink(objStore.obj, true), switchUrl))
     let auto_fullscreen: boolean
     switch (searchParams["auto_fullscreen"]) {
       case "true":
