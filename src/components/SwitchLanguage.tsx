@@ -26,11 +26,7 @@ export const SwitchLanguage = <C extends ElementType = "button">(
   }
 
   if (!localStorage.getItem("lang")) {
-    switchLang(
-      languages.find((l) => l.code === navigator.language)
-        ? navigator.language
-        : "en",
-    )
+    switchLang("zh-CN")
   }
 
   return (

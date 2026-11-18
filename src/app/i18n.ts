@@ -15,14 +15,9 @@ export const languages = Object.keys(langs).map((langPath) => {
   return { code: langCode, lang: langName }
 })
 
-// determine browser's default language
-const userLang = navigator.language.toLowerCase()
-const defaultLang =
-  languages.find((lang) => lang.code.toLowerCase() === userLang)?.code ||
-  languages.find(
-    (lang) => lang.code.toLowerCase().split("-")[0] === userLang.split("-")[0],
-  )?.code ||
-  "en"
+// Site default is Simplified Chinese; a manual choice (language menu) is
+// persisted in localStorage and takes precedence.
+const defaultLang = "zh-CN"
 
 // Get initial language from localStorage or fallback to defaultLang
 export let initialLang = localStorage.getItem("lang") ?? defaultLang
